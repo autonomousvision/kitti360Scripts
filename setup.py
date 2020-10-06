@@ -39,7 +39,7 @@ config = {
     'setup_requires': ['setuptools>=18.0'],
     'packages': find_packages(),
     'scripts': [],
-    'entry_points': {'gui_scripts': ['kitti360Viewer = kitti360scripts.viewer.kitti360Viewer:main'],
+    'entry_points': {'gui_scripts': ['kitti360Viewer = kitti360scripts.viewer.kitti360Viewer:main']},
     'package_data': {'': ['icons/*.png']},
     'ext_modules': ext_modules,
     'include_dirs': include_dirs
