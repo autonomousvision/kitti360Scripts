@@ -38,20 +38,6 @@ class Projection:
         return u, v, depth
 
 
-
-
-        # project 3d points from training frames to test frames
-        curr_pose = np.reshape(poses, [-1,4,4])
-        T = np.reshape(curr_pose[:, :3, 3], [-1,1,3])
-        R = curr_pose[:, :3, :3]
-
-        # convert points from world coordinate to local coordinate 
-        points_local = projector.project(vertices, R, T, inverse=True)
-
-        # perspective projection
-        u,v,depth = projector.perspective(points_local)
-
-
 class Camera:
     def __init__(self, root_dir, seq='2013_05_28_drive_0009_sync'):
         pose_dir = os.path.join(root_dir, 'data_poses', seq)

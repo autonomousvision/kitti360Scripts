@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Cityscapes labels
+# KITTI-360 labels
 #
 
 from collections import namedtuple
@@ -171,7 +171,7 @@ def assureSingleInstanceName( name ):
 # just a dummy main
 if __name__ == "__main__":
     # Print all the labels
-    print("List of cityscapes labels:")
+    print("List of KITTI-360 labels:")
     print("")
     print("    {:>21} | {:>3} | {:>7} | {:>14} | {:>10} | {:>12} | {:>12}".format( 'name', 'id', 'trainId', 'category', 'categoryId', 'hasInstances', 'ignoreInEval' ))
     print("    " + ('-' * 98))
