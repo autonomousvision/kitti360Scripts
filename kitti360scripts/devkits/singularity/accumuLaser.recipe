@@ -1,0 +1,75 @@
+#header
+Bootstrap: docker
+From: ubuntu:16.04
+
+#Sections
+
+%help
+Singularity image of the ubuntu16.04-build docker container.
+OS: Ubuntu 16.04
+OpenCV 2.4
+Eigen 3.3.1
+
+
+%setup
+# commands executed on the host system after os has been installed
+
+
+
+%files
+# install scripts for opencv and pcl 
+install_opencv.sh
+
+
+%labels
+# information labels about the container  saved in /.singularity.d/labels.json
+  maintainer Maximus Mutschler <maximus.mutschler@uni-tuebingen.de>
+  Version v0.1
+# overwrite  True= to be able to build it multiple times
+  overwrite False
+  opencv.version 2.4
+
+
+%environment
+# set environment variables
+
+
+
+%post
+# commands executed inside the container after os has been installed. Used for setup of the container
+apt-get update
+# gcc 6.0
+apt-get install -y software-properties-common
+add-apt-repository ppa:ubuntu-toolchain-r/test
+apt-get update
+apt-get -y install gcc g++ gcc-6 g++-6
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 80 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+update-alternatives --set gcc /usr/bin/gcc-6
+### dependencies
+# opencv
+./install_opencv.sh
+# eigen
+apt-get -y install wget cmake
+wget https://gitlab.com/libeigen/eigen/-/archive/3.3.1/eigen-3.3.1.tar.gz
+tar -xzvf eigen-3.3.1.tar.gz 
+cd eigen-3.3.1/
+mkdir build && cd build
+cmake ..
+make
+make install 
+
+%runscript
+# commands that are run when container's run command is used
+
+
+%test
+# validate setup at the end of the build process
+
+	echo '------------------------------------------------------------------'
+	echo 'Versions of installed tools:'
+        echo 'opencv:'
+        python -c 'import cv2
+print(cv2.__version__)'
+
+	echo '------------------------------------------------------------------'
+

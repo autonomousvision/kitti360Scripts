@@ -13,9 +13,9 @@ Dataset structure and data formats are available at: www.cvlibs.net/datasets/kit
 
 ### Installation
 
-Install `cityscapesscripts` with `pip`
+Install `kitti360Scripts` with `pip`
 ```
-python -m pip install kitti360scripts
+pip install git+https://github.com/autonomousvision/kitti360Scripts.git
 ```
 
 For the 2D graphical tools you additionally need to install

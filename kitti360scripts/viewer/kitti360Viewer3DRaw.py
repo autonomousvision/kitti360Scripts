@@ -53,21 +53,27 @@ class Kitti360Viewer3DRaw(object):
         pcd = np.reshape(pcd,[-1,4])
         return pcd 
 
-    def loadSickData(self, pcdFile):
+    def loadSickData(self, frame=0):
         pcdFile = os.path.join(self.raw3DPcdPath, '%010d.bin' % frame)
         if not os.path.isfile(pcdFile):
             raise RuntimeError('%s does not exist!' % pcdFile)
         pcd = np.fromfile(pcdFile, dtype=np.float32)
         pcd = np.reshape(pcd,[-1,2])
-        pcd = np.concatenate([np.zeros_like(pcd[:,0:1]), -pcd[:,0:1], pcd[:,1:2]])
+        pcd = np.concatenate([np.zeros_like(pcd[:,0:1]), -pcd[:,0:1], pcd[:,1:2]], axis=1)
         return pcd 
 
 
 
 if __name__=='__main__':
     # visualize raw 3D scans
-    v = Kitti360Viewer3DRaw()
-    points = v.loadVelodyneData(1000)
+    mode = 'sick'
+    frame = 1000
+
+    v = Kitti360Viewer3DRaw(mode=mode)
+    if mode=='velodyne':
+        points = v.loadVelodyneData(frame)
+    elif mode=='sick':
+        points = v.loadSickData(frame)
     pcd = open3d.geometry.PointCloud()
     pcd.points = open3d.utility.Vector3dVector(points[:,:3])
     

@@ -163,7 +163,7 @@ class Kitti360Viewer3D(object):
 
 
     def loadWindow(self, pcdFile, colorType='semantic', isLabeled=True, isDynamic=False):
-        window = pcdFile.split('/')[-2]
+        window = pcdFile.split(os.sep)[-2]
         
         print ('Loading %s ' % pcdFile)
         
