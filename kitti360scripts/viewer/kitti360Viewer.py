@@ -46,7 +46,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 # annotation helper
 from kitti360scripts.helpers.annotation  import Annotation2D, Annotation2DInstance, Annotation3D
 from kitti360scripts.helpers.labels     import name2label, id2label, assureSingleInstanceName
-from kitti360scripts.helpers.project import Camera
+from kitti360scripts.helpers.project import CameraPerspective as Camera
 
 #################
 ## Main GUI class
