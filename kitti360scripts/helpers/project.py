@@ -3,8 +3,7 @@ import numpy as np
 import re
 import yaml
 import sys
-sys.path.append('../devkits/commons')
-from loadCalibration import loadCalibrationCameraToPose 
+from kitti360scripts.devkits.commons.loadCalibration import loadCalibrationCameraToPose
 
 def readYAMLFile(fileName):
     '''make OpenCV YAML file compatible with python'''

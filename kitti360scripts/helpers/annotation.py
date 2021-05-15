@@ -4,7 +4,7 @@
 from __future__ import print_function, absolute_import, division
 import os
 import json
-from skimage import io, filters, morphology
+from skimage import io, filters
 import numpy as np
 from collections import namedtuple
 from collections import defaultdict

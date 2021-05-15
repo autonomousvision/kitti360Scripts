@@ -35,7 +35,7 @@ config = {
     'url': 'https://github.com/autonomousvision/kitti360Scripts',
     'license': 'https://github.com/autonomousvision/kitti360Scripts/blob/master/license.txt',
     'version': '1.0.0',
-    'install_requires': ['numpy', 'matplotlib', 'pillow'],
+    'install_requires': ['numpy', 'matplotlib', 'pillow', 'pyyaml', 'scikit-image'],
     'setup_requires': ['setuptools>=18.0'],
     'packages': find_packages(),
     'scripts': [],
