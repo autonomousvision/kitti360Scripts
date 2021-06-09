@@ -16,8 +16,6 @@ import subprocess
 import copy
 # numpy
 import numpy as np
-# opencv
-import cv2 
 # open3d
 import open3d
 #from lineset import LineMesh
