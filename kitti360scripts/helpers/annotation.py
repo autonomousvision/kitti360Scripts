@@ -427,7 +427,8 @@ class Annotation3DPly:
         self.showStatic = showStatic
 
         pcdFolder = 'static' if self.showStatic else 'dynamic'
-        self.pcdFileList = sorted(glob.glob(os.path.join(labelDir, sequence, pcdFolder, '*.ply')))
+        trainTestDir = 'train' if self.isLabeled else 'test'
+        self.pcdFileList = sorted(glob.glob(os.path.join(labelDir, trainTestDir, sequence, pcdFolder, '*.ply')))
         
         print('Found %d ply files in %s' % (len(self.pcdFileList), sequence))
 
