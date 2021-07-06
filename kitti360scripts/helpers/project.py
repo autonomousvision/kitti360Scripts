@@ -28,11 +28,20 @@ class Camera:
         poses = np.loadtxt(self.pose_file)
         frames = poses[:,0]
         poses = np.reshape(poses[:,1:],[-1,3,4])
-        self.poses = {}
+        self.cam2world = {}
         self.frames = frames
         for frame, pose in zip(frames, poses): 
             pose = np.concatenate((pose, np.array([0.,0.,0.,1.]).reshape(1,4)))
-            self.poses[frame] = np.matmul(pose, self.camToPose)
+            # consider the rectification for perspective cameras
+            if self.cam_id==0 or self.cam_id==1:
+                self.cam2world[frame] = np.matmul(np.matmul(pose, self.camToPose),
+                                                  np.linalg.inv(self.R_rect))
+            # fisheye cameras
+            elif self.cam_id==2 or self.cam_id==3:
+                self.cam2world[frame] = np.matmul(pose, self.camToPose)
+            else:
+                raise RuntimeError('Unknown Camera ID!')
+
 
     def world2cam(self, points, R, T, inverse=False):
         assert (points.ndim==R.ndim)
@@ -61,7 +70,7 @@ class Camera:
     def project_vertices(self, vertices, frameId, inverse=True):
 
         # current camera pose
-        curr_pose = self.poses[frameId]
+        curr_pose = self.cam2world[frameId]
         T = curr_pose[:3,  3]
         R = curr_pose[:3, :3]
 
@@ -109,11 +118,14 @@ class CameraPerspective(Camera):
             intrinsics = f.read().splitlines()
         for line in intrinsics:
             line = line.split(' ')
-            if line[0] == 'P_rect_00:':
+            if line[0] == 'P_rect_%02d:' % self.cam_id:
                 K = [float(x) for x in line[1:]]
                 K = np.reshape(K, [3,4])
                 intrinsic_loaded = True
-            if line[0] == "S_rect_00:":
+            elif line[0] == 'R_rect_%02d:' % self.cam_id:
+                R_rect = np.eye(4) 
+                R_rect[:3,:3] = np.array([float(x) for x in line[1:]]).reshape(3,3)
+            elif line[0] == "S_rect_%02d:" % self.cam_id:
                 width = int(float(line[1]))
                 height = int(float(line[2]))
         assert(intrinsic_loaded==True)
@@ -121,6 +133,7 @@ class CameraPerspective(Camera):
     
         self.K = K
         self.width, self.height = width, height
+        self.R_rect = R_rect
 
     def cam2image(self, points):
         ndim = points.ndim
