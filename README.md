@@ -4,7 +4,6 @@ This repository contains scripts for inspection of the KITTI-360 dataset. This l
 
 Details and download are available at: www.cvlibs.net/datasets/kitti-360
 
-
 ## Dataset Structure
 
 Dataset structure and data formats are available at: www.cvlibs.net/datasets/kitti-360/documentation.php
@@ -58,10 +57,23 @@ Note that all files have a small documentation at the top. Most important files
  - `helpers/labels.py`: central file defining the IDs of all semantic classes and providing mapping between various class properties.
  - `helpers/annotations.py`: central file containing the loaders for all labels including 3D bounding boxes and fused point clouds
 
-
 ## Acknowledgment
 
 The 2D graphical tool is adapted from Cityscapes. 
+
+## Reference
+
+If you find this code or our dataset helpful in your research, please use the following BibTeX entry.
+
+```
+@article{Liao2021ARXIV, 
+   title   = {{KITTI}-360: A Novel Dataset and Benchmarks for Urban Scene Understanding in 2D and 3D}, 
+   author  = {Yiyi Liao and Jun Xie and Andreas Geiger}, 
+   journal = {arXiv.org},
+   volume  = {2109.13410},
+   year    = {2021}, 
+}
+```
 
 ## Contact
 
