@@ -85,7 +85,8 @@ Please feel free to contact us with any questions, suggestions or comments:
 
 ## License
 
-Our *utility scripts* in this repository are released under the MIT license. 
+Our __utility scripts__ in this repository are released under the following MIT license. 
+
 ---
 
 
@@ -99,5 +100,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-Our *datasets* and *benchmarks* are copyright by us and published under the [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License](https://creativecommons.org/licenses/by-nc-sa/3.0/). This means that you must attribute the work in the manner specified by the authors, you may not use this work for commercial purposes and if you alter, transform, or build upon this work, you may distribute the resulting work only under the same license.
+Our __datasets__ and __benchmarks__ are copyright by us and published under the [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 License](https://creativecommons.org/licenses/by-nc-sa/3.0/). This means that you must attribute the work in the manner specified by the authors, you may not use this work for commercial purposes and if you alter, transform, or build upon this work, you may distribute the resulting work only under the same license.
 
