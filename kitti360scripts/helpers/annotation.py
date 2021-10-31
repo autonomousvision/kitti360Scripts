@@ -132,6 +132,8 @@ class KITTI360Bbox3D(KITTI360Object):
         vertices = np.matmul(R, vertices.transpose()).transpose() + T
         self.vertices = vertices
         self.faces = faces
+        self.R = R
+        self.T = T
 
     def parseBbox(self, child):
         semanticIdKITTI = int(child.find('semanticId').text)
@@ -354,10 +356,11 @@ class Annotation3D:
     # Constructor
     def __init__(self, labelDir='', sequence=''):
 
-        labelPath = os.path.join(labelDir, 'train', '%s.xml' % sequence)
-        if not os.path.isfile(labelPath):
+        labelPath = glob.glob(os.path.join(labelDir, '*', '%s.xml' % sequence)) # train or test
+        if len(labelPath)!=1:
             raise RuntimeError('%s does not exist! Please specify KITTI360_DATASET in your environment path.' % labelPath)
         else:
+            labelPath = labelPath[0]
             print('Loading %s...' % labelPath)
 
         self.init_instance(labelPath)
@@ -369,6 +372,8 @@ class Annotation3D:
 
         self.objects = defaultdict(dict)
 
+        self.num_bbox = 0
+
         for child in root:
             if child.find('transform') is None:
                 continue
@@ -376,6 +381,7 @@ class Annotation3D:
             obj.parseBbox(child)
             globalId = local2global(obj.semanticId, obj.instanceId)
             self.objects[globalId][obj.timestamp] = obj
+            self.num_bbox+=1
 
         globalIds = np.asarray(list(self.objects.keys()))
         semanticIds, instanceIds = global2local(globalIds)
@@ -383,6 +389,7 @@ class Annotation3D:
             if label.hasInstances:
                 print(f'{label.name:<30}:\t {(semanticIds==label.id).sum()}')
         print(f'Loaded {len(globalIds)} instances')
+        print(f'Loaded {self.num_bbox} boxes')
 
 
     def __call__(self, semanticId, instanceId, timestamp=None):
@@ -431,7 +438,7 @@ class Annotation3DPly:
         
         print('Found %d ply files in %s' % (len(self.pcdFileList), sequence))
 
-    def readBinaryPly(self, pcdFile, n_pts):
+    def readBinaryPly(self, pcdFile, n_pts=None):
 
         with open(pcdFile, 'rb') as f:
             plyData = f.readlines()
@@ -441,7 +448,9 @@ class Annotation3DPly:
         plyData = b"".join(plyData)
 
         n_pts_loaded = len(plyData)/self.fmt_len
-        assert(n_pts_loaded==n_pts)
+        # sanity check
+        if n_pts:
+            assert(n_pts_loaded==n_pts)
         n_pts_loaded = int(n_pts_loaded)
 
         data = []
@@ -471,6 +480,48 @@ class Annotation3DPly:
             f.write(b'property int semantic\n')
 
                     
+class Annotation3DInstance(object):
+    instance_id = 0
+    labelId = 0
+    vert_count = 0
+    med_dist = -1
+    dist_conf = 0.0
+
+    def __init__(self, mesh_vert_instances, instance_id):
+        if (instance_id == -1):
+            return
+        self.instance_id     = int(instance_id)
+        self.labelId    = int(self.get_labelId(instance_id))
+        self.vert_count = int(self.get_instance_verts(mesh_vert_instances, instance_id))
+
+    def get_labelId(self, instance_id):
+        return int(instance_id // 1000)
+
+    def get_instance_verts(self, mesh_vert_instances, instance_id):
+        return (mesh_vert_instances == instance_id).sum()
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    def to_dict(self):
+        dict = {}
+        dict["instance_id"] = self.instance_id
+        dict["labelId"]    = self.labelId
+        dict["vert_count"]  = self.vert_count
+        dict["med_dist"]    = self.med_dist
+        dict["dist_conf"]   = self.dist_conf
+        return dict
+
+    def from_json(self, data):
+        self.instance_id     = int(data["instance_id"])
+        self.labelId        = int(data["labelId"])
+        self.vert_count      = int(data["vert_count"])
+        if ("med_dist" in data):
+            self.med_dist    = float(data["med_dist"])
+            self.dist_conf   = float(data["dist_conf"])
+
+    def __str__(self):
+        return "("+str(self.instance_id)+")"
 
 # a dummy example
 if __name__ == "__main__":
