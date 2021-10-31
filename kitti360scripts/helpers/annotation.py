@@ -4,7 +4,7 @@
 from __future__ import print_function, absolute_import, division
 import os
 import json
-from skimage import io, filters, morphology
+from skimage import io, filters
 import numpy as np
 from collections import namedtuple
 from collections import defaultdict
@@ -434,7 +434,8 @@ class Annotation3DPly:
         self.showStatic = showStatic
 
         pcdFolder = 'static' if self.showStatic else 'dynamic'
-        self.pcdFileList = sorted(glob.glob(os.path.join(labelDir, sequence, pcdFolder, '*.ply')))
+        trainTestDir = 'train' if self.isLabeled else 'test'
+        self.pcdFileList = sorted(glob.glob(os.path.join(labelDir, trainTestDir, sequence, pcdFolder, '*.ply')))
         
         print('Found %d ply files in %s' % (len(self.pcdFileList), sequence))
 
