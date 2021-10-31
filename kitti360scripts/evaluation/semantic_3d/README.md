@@ -65,7 +65,7 @@ All results must be provided in the root directory of a zip file using the forma
 0008_0000000235_0000000608.npy
 ...
 0018_0000000002_0000000341.npy
-0018_0000000330_0000000543.ply
+0018_0000000330_0000000543.npy
 ...
 ```
 Each numpy file should contain a vector of the semantic labels corresponding to the accumulated point cloud. Given `N` points in the accumulated point cloud, the submitted .npy file should contain __only__ a vector of length `N`, where the `i`th scalar indicates the semantic label of the `i`th point in the accumulated point cloud. 
