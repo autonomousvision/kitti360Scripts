@@ -153,8 +153,9 @@ if 'KITTI360_EXPORT_DIR' in os.environ:
     args.exportFile = "{}/resultPixelLevelSemanticLabeling.json".format(export_dir)
 else:
     args.exportFile = os.path.join(args.kitti360Path, "evaluationResults", "resultPixelLevelSemanticLabeling.json")
+
 # Parameters that should be modified by user
-args.groundTruthListFile = os.path.join(args.kitti360Path, 'data_3d_semantics', 'train', '2013_05_28_drive_val.txt'
+args.groundTruthListFile = os.path.join(args.kitti360Path, 'data_3d_semantics', 'train', '2013_05_28_drive_val.txt')
 
 # Remaining params
 args.evalPixelAccuracy  = True
