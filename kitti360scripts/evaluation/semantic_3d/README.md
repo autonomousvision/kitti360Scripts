@@ -101,6 +101,6 @@ For example, the 0008_0000000002_0000000245.txt may contain:
 26 0.973782
 ...
 ```
-To avoid submitting a very large file to the evaluation server, we accept prediction which assign only a single instance label to each 3D point. This means the instance masks should be saved in a single vector of length `N`, where `N` is the total amount of 3D points. Each element in this vector denotes an instance ID. Let `M` denote the number of lines in the txt file, then a valid instance ID should be in the range of `1` to `M`. A instance ID of `0` means that the 3D point does not belonging to any instance listed in the txt file. 
+To avoid submitting a very large file to the evaluation server, we only accept predictions that assign a single instance label to each 3D point. This means the instance masks should be saved in a single vector of length `N`, where `N` is the total amount of 3D points. Each element in this vector denotes an instance ID. Let `M` denote the number of lines in the txt file, then a valid instance ID should be in the range of `1` to `M`. A instance ID of `0` means that the 3D point does not belong to any instance listed in the txt file. 
 
 The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. Further note that we only evaluate two classes, __building__ and __car__ for 3D instance segmentation.
