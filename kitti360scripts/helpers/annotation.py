@@ -405,13 +405,13 @@ class Annotation3DPly:
     def __init__(self, labelDir='', sequence='', isLabeled=True, isDynamic=False, showStatic=True):
 
         if isLabeled and not isDynamic:
-            # x y z r g b semanticId instanceId isVisible
-            self.fmt = '=fffBBBiiB'
-            self.fmt_len = 24
-        elif isLabeled and isDynamic:
-            # x y z r g b semanticId instanceId isVisible timestamp
-            self.fmt = '=fffBBBiiBi'
+            # x y z r g b semanticId instanceId isVisible confidence
+            self.fmt = '=fffBBBiiBf'
             self.fmt_len = 28
+        elif isLabeled and isDynamic:
+            # x y z r g b semanticId instanceId isVisible timestamp confidence
+            self.fmt = '=fffBBBiiBif'
+            self.fmt_len = 32 
         elif not isLabeled and not isDynamic:
             # x y z r g b
             self.fmt = '=fffBBBB'

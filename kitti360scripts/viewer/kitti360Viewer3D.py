@@ -85,9 +85,11 @@ class Kitti360Viewer3D(object):
         self.showStatic        = showStatic 
         # show visible point clouds only
         self.showVisibleOnly   = False
-        # colormap
+        # colormap for instances
         self.cmap = matplotlib.cm.get_cmap('Set1')
         self.cmap_length = 9 
+        # colormap for confidence
+        self.cmap_conf = matplotlib.cm.get_cmap('plasma')
 
         if 'KITTI360_DATASET' in os.environ:
             kitti360Path = os.environ['KITTI360_DATASET']
@@ -127,6 +129,10 @@ class Kitti360Viewer3D(object):
             else:
                 color[globalIds==uid] = (96,96,96) # stuff objects in instance mode
         color = color.astype(np.float)/255.0
+        return color
+
+    def assignColorConfidence(self, confidence):
+        color = self.cmap_conf(confidence)[:,:3]
         return color
 
     def assignColorDynamic(self, timestamps):
@@ -198,6 +204,10 @@ class Kitti360Viewer3D(object):
             pcd.colors = open3d.utility.Vector3dVector(ptsColor)
         elif colorType=='bbox':
             ptsColor = np.asarray(pcd.colors)
+            pcd.colors = open3d.utility.Vector3dVector(ptsColor)
+        elif colorType=='confidence':
+            confidence = data[:,-1]
+            ptsColor = self.assignColorConfidence(confidence)
             pcd.colors = open3d.utility.Vector3dVector(ptsColor)
         elif colorType!='rgb':
             raise ValueError("Color type can only be 'rgb', 'bbox', 'semantic', 'instance'!")
@@ -292,7 +302,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('--sequence', type=int, default=0, 
                                 help='The sequence to visualize')
-    parser.add_argument('--mode', choices=['rgb', 'semantic', 'instance', 'bbox'], default='semantic',
+    parser.add_argument('--mode', choices=['rgb', 'semantic', 'instance', 'confidence', 'bbox'], default='semantic',
                                 help='The modality to visualize')
     parser.add_argument('--max_bbox', type=int, default=100,
                                 help='The maximum number of bounding boxes to visualize')
@@ -300,6 +310,7 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     v = Kitti360Viewer3D(args.sequence)
+
     if args.mode=='bbox':
         v.loadBoundingBoxes()
 
