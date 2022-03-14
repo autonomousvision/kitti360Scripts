@@ -44,6 +44,7 @@ except:
 from kitti360scripts.helpers.annotation  import Annotation3D, Annotation3DPly, global2local
 from kitti360scripts.helpers.project     import Camera
 from kitti360scripts.helpers.labels      import name2label, id2label, kittiId2label
+from kitti360scripts.helpers.ply         import read_ply
 
 
 # the main class that parse fused point clouds
@@ -98,7 +99,7 @@ class Kitti360Viewer3D(object):
         sequence = '2013_05_28_drive_%04d_sync' % seq
         self.label3DPcdPath  = os.path.join(kitti360Path, 'data_3d_semantics')
         self.label3DBboxPath = os.path.join(kitti360Path, 'data_3d_bboxes')
-        self.annotation3D = Annotation3D(self.label3DBboxPath, sequence)
+        #self.annotation3D = Annotation3D(self.label3DBboxPath, sequence)
         self.annotation3DPly = Annotation3DPly(self.label3DPcdPath, sequence)
         self.sequence = sequence
 
@@ -169,30 +170,29 @@ class Kitti360Viewer3D(object):
         if window in self.pointClouds.keys():
             pcd = self.pointClouds[window]
         else:
-            pcd = open3d.io.read_point_cloud(pcdFile)
-
-        n_pts = np.asarray(pcd.points).shape[0]
-        data = self.annotation3DPly.readBinaryPly(pcdFile, n_pts)
+            #pcd = open3d.io.read_point_cloud(pcdFile)
+            data = read_ply(pcdFile)
+            points=np.vstack((data['x'], data['y'], data['z'])).T
+            color=np.vstack((data['red'], data['green'], data['green'])).T
+            pcd = open3d.geometry.PointCloud()
+            pcd.points = open3d.utility.Vector3dVector(points)
         
-        if self.showVisibleOnly:
-            ind = 8 if isLabeled else 6
-            isVisible = data[:,ind]
-            pcd = pcd.select_by_index(np.where(isVisible)[0])
-        else:
-            color=data[:,3:6]
-            mask = np.logical_and(np.mean(color,1)==128, np.std(color,1)==0)
-            mask = 1-mask
-            pcd = pcd.select_by_index(np.where(mask)[0])
+        # if self.showVisibleOnly:
+        #     pcd = pcd.select_by_index(np.where(isVisible)[0])
+        # else:
+        #     # mask = np.logical_and(np.mean(color,1)==128, np.std(color,1)==0)
+        #     # mask = 1-mask
+        #     # pcd = pcd.select_by_index(np.where(mask)[0])
 
-            data = data[mask.astype(np.bool),:]
-            self.accumuData.append(data)
+        #     # data = data[mask.astype(np.bool),:]
+        #     self.accumuData.append(data)
 
 
         # assign color
         if colorType=='semantic' or colorType=='instance':
-            globalIds = data[:,7]
-            if self.showVisibleOnly:
-                globalIds = globalIds[np.where(isVisible)[0]]
+            globalIds = data['instance']
+            #if self.showVisibleOnly:
+            #    globalIds = globalIds[np.where(isVisible)[0]]
         
             ptsColor = self.assignColor(globalIds, colorType)
             pcd.colors = open3d.utility.Vector3dVector(ptsColor)
@@ -201,6 +201,10 @@ class Kitti360Viewer3D(object):
             pcd.colors = open3d.utility.Vector3dVector(ptsColor)
         elif colorType!='rgb':
             raise ValueError("Color type can only be 'rgb', 'bbox', 'semantic', 'instance'!")
+
+        if self.showVisibleOnly:
+            isVisible = data['visible']
+            pcd = pcd.select_by_index(np.where(isVisible)[0])
 
         if self.downSampleEvery>1:
             print(np.asarray(pcd.points).shape)
@@ -211,7 +215,7 @@ class Kitti360Viewer3D(object):
 
     def loadWindows(self, colorType='semantic'):
         pcdFolder = 'static' if self.showStatic else 'dynamic'
-        pcdFileList = sorted(glob.glob(os.path.join(self.label3DPcdPath, self.sequence, pcdFolder, '*.ply')))
+        pcdFileList = sorted(glob.glob(os.path.join(self.label3DPcdPath, 'train', self.sequence, pcdFolder, '*.ply')))
     
         if not len(pcdFileList):
             print ('%s does not exist!!' % os.path.join(self.label3DPcdPath, self.sequence, '*', pcdName))
