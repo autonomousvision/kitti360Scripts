@@ -1,0 +1,2 @@
+data_2d_nvs_drop50/train_00/2013_05_28_drive_0008_sync/image_00/data_rect/0000000805.png data_2d_semantics/test1/2013_05_28_drive_0008_sync/semantic/0000000805.png
+data_2d_nvs_drop50/train_00/2013_05_28_drive_0008_sync/image_00/data_rect/0000000807.png data_2d_semantics/test1/2013_05_28_drive_0008_sync/semantic/0000000807.png
