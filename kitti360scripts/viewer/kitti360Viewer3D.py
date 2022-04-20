@@ -179,27 +179,14 @@ class Kitti360Viewer3D(object):
             #pcd = open3d.io.read_point_cloud(pcdFile)
             data = read_ply(pcdFile)
             points=np.vstack((data['x'], data['y'], data['z'])).T
-            color=np.vstack((data['red'], data['green'], data['green'])).T
+            color=np.vstack((data['red'], data['green'], data['blue'])).T
             pcd = open3d.geometry.PointCloud()
             pcd.points = open3d.utility.Vector3dVector(points)
+            pcd.colors = open3d.utility.Vector3dVector(color.astype(np.float)/255.)
         
-        # if self.showVisibleOnly:
-        #     pcd = pcd.select_by_index(np.where(isVisible)[0])
-        # else:
-        #     # mask = np.logical_and(np.mean(color,1)==128, np.std(color,1)==0)
-        #     # mask = 1-mask
-        #     # pcd = pcd.select_by_index(np.where(mask)[0])
-
-        #     # data = data[mask.astype(np.bool),:]
-        #     self.accumuData.append(data)
-
-
         # assign color
         if colorType=='semantic' or colorType=='instance':
             globalIds = data['instance']
-            #if self.showVisibleOnly:
-            #    globalIds = globalIds[np.where(isVisible)[0]]
-        
             ptsColor = self.assignColor(globalIds, colorType)
             pcd.colors = open3d.utility.Vector3dVector(ptsColor)
         elif colorType=='bbox':
