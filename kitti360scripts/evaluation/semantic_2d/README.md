@@ -1,6 +1,6 @@
 ###########################################################################
 
-               KITTI-360: THE 2D SEMANTIC SEGMENATION BENCHMARK          
+           KITTI-360: THE 2D SEMANTIC INSTANCE SEGMENATION BENCHMARK          
                     Yiyi Liao     Jun Xie     Andreas Geiger                  
                            University of Tübingen                        
           Max Planck Institute for Intelligent Systems, Tübingen         
@@ -10,16 +10,16 @@
 
 
 
-This file describes the KITTI-360 2D semantic segmentation benchmark that consists of 910 test images. 
+This file describes the KITTI-360 2D semantic/instance segmentation benchmark that consists of 910 test images. 
 
 
 ## Train/Val Data ##
 
-The RGB images for training and validation as well as the training/validation split can be found in 
+The RGB images for training and validation can be found in 
 ```
 Download -> 2D data & labels -> Perspective Images for Train & Val (128G)
 ```
-The corresponding labels for training and validation can be found in 
+The corresponding labels for training and validation as well as the training/validation split can be found in 
 ```
 Download -> 2D data & labels -> Semantics (1.8G) 
 ```
@@ -30,7 +30,7 @@ Please refer to the "2D Data Format" of our online [documentation](http://www.cv
 
 We evaluate on 910 images of the left perspective camera sampled from two test
 sequences, 0008 and 0018. The RGB images for testing can be found in: ```
-Download -> 2D data & labels -> Test (1.5G) ```
+Download -> 2D data & labels -> Test Semantic (1.5G) ```
 
 ## Output for 2D Semantic Segmentation ##
 

@@ -17,7 +17,7 @@ This file describes the KITTI-360 2D semantic segmentation benchmark that consis
 
 The RGB images for training and the train/test split can be found in:
 ```
-Download -> 2D data & labels -> NVS (0.3G)
+Download -> 2D data & labels -> Test NVS (0.3G)
 ```
 The camera poses can be found in:
 ```
