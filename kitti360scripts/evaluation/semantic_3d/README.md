@@ -75,7 +75,7 @@ The semantic labels should follow the definition of [labels.py](https://github.c
 ## Output for 3D Instance Segmentation ##
 
 The output structure should be analogous to the input.
-All results must be provided in the root directory of a zip file using the format of npy. The file names should follow `{seq:0>4}_{start_frame:0>10}_{end_frame:0>10}.txt` or `{seq:0>4}_{start_frame:0>10}_{end_frame:0>10}.npy`. Here is how the semantic predictions should look like in root directory of your zip file. 
+All results must be provided in the root directory of a zip file using the format of npy. The file names should follow `{seq:0>4}_{start_frame:0>10}_{end_frame:0>10}.txt` or `{seq:0>4}_{start_frame:0>10}_{end_frame:0>10}.npy`. Here is how the instance predictions should look like in root directory of your zip file. 
 ```
 0008_0000000002_0000000245.txt
 0008_0000000002_0000000245.npy
@@ -104,3 +104,24 @@ For example, the 0008_0000000002_0000000245.txt may contain:
 To avoid submitting a very large file to the evaluation server, we only accept predictions that assign a single instance label to each 3D point. This means the instance masks should be saved in a single vector of length `N`, where `N` is the total amount of 3D points. Each element in this vector denotes an instance ID. Let `M` denote the number of lines in the txt file, then a valid instance ID should be in the range of `1` to `M`. An instance ID of `0` means that the 3D point does not belong to any instance listed in the txt file. 
 
 The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. Further note that we only evaluate two classes, __building__ and __car__ for 3D instance segmentation.
+
+
+## Output for 3D Bounding Box Detection ##
+
+The output structure should be analogous to the input.
+All results must be provided in the root directory of a zip file using the format of npy. The file names should follow `{seq:0>4}_{start_frame:0>10}_{end_frame:0>10}.npy`. Here is how the 3D bounding box predictions should look like in root directory of your zip file. 
+```
+0008_0000000002_0000000245.npy
+0008_0000000235_0000000608.npy
+...
+0018_0000000002_0000000341.npy
+0018_0000000330_0000000543.npy
+...
+```
+Each npy file should contain a set of bounding boxes with each line denoting a bounding box parameterized as follows:
+```
+center_x, center_y, center_z, size_x, size_y, size_z, heading_angle, id
+```
+Please check the `param2Bbox` function for more details.
+
+The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. Further note that we only evaluate two classes, __building__ and __car__ for 3D bounding box detection.
