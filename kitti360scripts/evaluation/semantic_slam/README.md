@@ -78,7 +78,7 @@ test_semantic_3.txt
 For each pose txt file, one line indicates a flattened 3x4 matrix. Note that our ground truth is the rigid body transform from GPU/IMU coordinates to a world coordinate system (`poses.txt`). Please check our `test_data` folder for examples. The ply files are reconstructed point clouds containing only `x y z` locations. The semantic label of each point should be provided in a seperate txt file containing a vector of length `M` equal to the number of points in the ply file.
 The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`.
 
-*IMPORTANT* Note that our evaluation server does not accept submission file larger than 200MB. It is required to apply our downsampling script to your reconstructed point cloud before submission. Please check the [sparify](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360Scripts/evaluation/semantic_slam/sparsify) code for more details.
+*IMPORTANT* Note that our evaluation server does not accept submission file larger than 200MB. It is required to apply our downsampling script to your reconstructed point cloud before submission. Please check the [sparify](https://github.com/autonomousvision/kitti360Scripts/tree/master/kitti360scripts/evaluation/semantic_slam/sparsify) code for more details.
 
 ## Evaluation of Semantic Mapping ##
 
