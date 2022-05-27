@@ -1,6 +1,6 @@
 ###########################################################################
 
-            KITTI-360: THE 3D SEMANTIC INSTANCE SEGMENATION BENCHMARK          
+                  KITTI-360: THE 3D SCENE UNDERSTANDING BENCHMARK          
                      Yiyi Liao     Jun Xie     Andreas Geiger             
                             University of Tübingen                        
            Max Planck Institute for Intelligent Systems, Tübingen         
@@ -9,9 +9,9 @@
 ###########################################################################
 
 
+# Segmentation and Bounding Box Detection 
 
-This file describes the KITTI-360 3D semantic segmentation benchmark that consists of 42 test windows. 
-
+This section describes the KITTI-360 3D scene understanding benchmark that consists of 42 test windows for evaluating 3D semantic segmentation, 3D instance segmentation as well as 3D bounding box detection. These tasks are evaluated on the `test1` split of KITTI-360.
 
 ## Train/Val Data ##
 
@@ -125,3 +125,34 @@ center_x, center_y, center_z, size_x, size_y, size_z, heading_angle, id
 Please check the `param2Bbox` function for more details.
 
 The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. Further note that we only evaluate two classes, __building__ and __car__ for 3D bounding box detection.
+
+# 3D Semantic Scene Completion 
+
+We evaluate 3D semantic scene completion on the `test2` split of KITTI-360 contatining 38 test windows. To avoid submitting a large file to the evaluation server, we evaluate on the middle frame of each test window.
+
+## Train/Val Data ##
+
+In contrast to the scene perception tasks considered above, the semantic scene completion task additionally requires predicting geometry and semantics in unobserved regions. This task takes as a single LiDAR scan as input and requires semantic scene completion within a corridor of 30m around the vehicle poses of a 100m trajectory. You are free to use all data of the KITTI-360 training split for training. Please refer to the `generateCroppedGroundTruth` function for preparing the training GT given an input LiDAR scan.
+
+## Test Data ##
+
+The 38 frames we use for evaluation can be found at: 
+```
+Download -> 3D data & labels -> Test Completion (35M)
+```
+Each file contains a raw input point cloud defined in the world coordinate where we accumulate the point clouds.
+
+
+## Output for 3D Scene Completion ##
+
+All results must be provided in the root directory of a zip file using the format of npy. The file names should follow `{seq:0>4}_{frame:0>10}.npy`. Here is how the 3D scene completion results should look like in root directory of your zip file. 
+```
+0002_0000016048.npy
+...
+0004_0000000144.npy
+...
+0008_0000001602.npy
+...
+```
+Each npy file should contain a point cloud defined in the world coordinate where the accumulated point cloud is defined. Each line of the npy file corresponds to a point location `x y z` in the world coordinate and its corresponding semantic label.
+The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`.

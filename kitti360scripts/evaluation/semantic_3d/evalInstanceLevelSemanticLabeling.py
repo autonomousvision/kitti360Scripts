@@ -39,7 +39,7 @@ import numpy as np
 from kitti360scripts.helpers.csHelpers import *
 from kitti360scripts.helpers.labels import labels, id2label, trainId2label
 from kitti360scripts.helpers.annotation import Annotation3DInstance 
-from ply import read_ply
+from kitti360scripts.helpers.ply import read_ply
 
 
 ###################################
