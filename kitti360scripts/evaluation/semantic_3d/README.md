@@ -120,7 +120,7 @@ All results must be provided in the root directory of a zip file using the forma
 ```
 Each npy file should contain a set of bounding boxes with each line denoting a bounding box parameterized as follows:
 ```
-center_x, center_y, center_z, size_x, size_y, size_z, heading_angle, id
+center_x, center_y, center_z, size_x, size_y, size_z, heading_angle, id, confidence
 ```
 Please check the `param2Bbox` function for more details.
 
