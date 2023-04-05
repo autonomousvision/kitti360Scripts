@@ -17,6 +17,7 @@
     
 import os
 import sys
+sys.path.append(os.getcwd())
 import numpy as np
 from scipy.spatial import ConvexHull
 import fnmatch
@@ -25,8 +26,15 @@ import fnmatch
 from kitti360scripts.helpers.csHelpers import *
 from kitti360scripts.helpers.labels import id2label, trainId2label
 
+DEBUG=False
+if DEBUG:
+    import open3d
+    from kitti360scripts.helpers.ply import read_ply
+
 def getGroundTruth(groundTruthListFile, eval_every=1):
-    if 'KITTI360_DATASET' in os.environ:
+    if args.groundTruthWindows:
+        rootPath = args.groundTruthWindows
+    elif 'KITTI360_DATASET' in os.environ:
         rootPath = os.environ['KITTI360_DATASET']
     else:
         rootPath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..')
@@ -43,9 +51,9 @@ def getGroundTruth(groundTruthListFile, eval_every=1):
     groundTruthFiles = []
     for i,line in enumerate(lines):
         if i % eval_every == 0:
-            seq = int(line.split(' ')[0])
-            startFrame = int(line.split(' ')[1])
-            endFrame = int(line.split(' ')[2])
+            seq        = int(line.split('_')[6])                                      #int(line.split(' ')[0])
+            startFrame = int(os.path.basename(line).replace(".ply", "").split("_")[0])#int(line.split(' ')[1])
+            endFrame   = int(os.path.basename(line).replace(".ply", "").split("_")[1])
             groundTruthFile = os.path.join(rootPath, '%04d_%010d_%010d.npy' % (seq, startFrame, endFrame))
             if os.path.isfile(os.path.join(groundTruthFile)):
                 groundTruthFiles.append(groundTruthFile)
@@ -89,14 +97,15 @@ def getPrediction( args, groundTruthFile ):
 
     filePattern = "{}*.npy".format( os.path.splitext(os.path.basename(groundTruthFile))[0] )
 
-    predictionFile = None
-    for root, filenames in args.predictionWalk:
-        for filename in fnmatch.filter(filenames, filePattern):
-            if not predictionFile:
-                predictionFile = os.path.join(root, filename)
-            else:
-                printError("Found multiple predictions for ground truth {}".format(groundTruthFile))
+    # predictionFile = None
+    # for root, filenames in args.predictionWalk:
+    #     for filename in fnmatch.filter(filenames, filePattern):
+    #         if not predictionFile:
+    #             predictionFile = os.path.join(root, filename)
+    #         else:
+    #             printError("Found multiple predictions for ground truth {}".format(groundTruthFile))
 
+    predictionFile = os.path.join(args.predictionPath, os.path.basename(groundTruthFile))
     if not predictionFile:
         printError("Found no prediction for ground truth {}".format(groundTruthFile))
 
@@ -119,24 +128,24 @@ def polygonClip(subjectPolygon, clipPolygon):
    """
    def inside(p):
       return(cp2[0]-cp1[0])*(p[1]-cp1[1]) > (cp2[1]-cp1[1])*(p[0]-cp1[0])
- 
+
    def computeIntersection():
       dc = [ cp1[0] - cp2[0], cp1[1] - cp2[1] ]
       dp = [ s[0] - e[0], s[1] - e[1] ]
       n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
-      n2 = s[0] * e[1] - s[1] * e[0] 
-      n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
+      n2 = s[0] * e[1] - s[1] * e[0]
+      n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0] + 0.01)
       return [(n1*dp[0] - n2*dc[0]) * n3, (n1*dp[1] - n2*dc[1]) * n3]
- 
+
    outputList = subjectPolygon
    cp1 = clipPolygon[-1]
- 
+
    for clipVertex in clipPolygon:
       cp2 = clipVertex
       inputList = outputList
       outputList = []
       s = inputList[-1]
- 
+
       for subjectVertex in inputList:
          e = subjectVertex
          if inside(e):
@@ -165,7 +174,7 @@ def convexHullIntersection(p1, p2):
         hull_inter = ConvexHull(inter_p)
         return inter_p, hull_inter.volume
     else:
-        return None, 0.0  
+        return None, 0.0
 
 def box3dVolume(corners):
     ''' corners: (8,3) no assumption on axis direction '''
@@ -195,8 +204,8 @@ def box3dIou(corners1, corners2):
     ''' Compute 3D bounding box IoU.
 
     Input:
-        corners1: numpy array (8,3), assume up direction is negative Y
-        corners2: numpy array (8,3), assume up direction is negative Y
+        corners1: numpy array (8,3), assume up direction is Z
+        corners2: numpy array (8,3), assume up direction is Z
     Output:
         iou: 3D bounding box IoU
         iou_2d: bird's eye view 2D bounding box IoU
@@ -205,7 +214,7 @@ def box3dIou(corners1, corners2):
     '''
     # corner points are in counter clockwise order
     rect1 = [(corners1[i,0], corners1[i,1]) for i in range(3,-1,-1)]
-    rect2 = [(corners2[i,0], corners2[i,1]) for i in range(3,-1,-1)] 
+    rect2 = [(corners2[i,0], corners2[i,1]) for i in range(3,-1,-1)]
     area1 = polyArea(np.array(rect1)[:,0], np.array(rect1)[:,1])
     area2 = polyArea(np.array(rect2)[:,0], np.array(rect2)[:,1])
     inter, interArea = convexHullIntersection(rect1, rect2)
@@ -392,8 +401,8 @@ def evalDetection(pred_all, gt_all, ovthresh=0.25, use_07_metric=False):
         print('Computing AP for class: ', classname)
         rec[classname], prec[classname], ap[classname] = evalDetectionClass(pred[classname], gt[classname], ovthresh, use_07_metric)
         print(classname, ap[classname])
-    
-    return rec, prec, ap 
+
+    return rec, prec, ap
 
 def evalDetectionMultiprocessing(pred_all, gt_all, ovthresh=0.25, use_07_metric=False):
     """ Generic functions to compute precision/recall for object detection
@@ -433,7 +442,7 @@ def evalDetectionMultiprocessing(pred_all, gt_all, ovthresh=0.25, use_07_metric=
     for classname in gt.keys():
         if classname in pred:
             ret_values.append( evalDetectionClassWrapper((pred[classname], gt[classname], ovthresh, use_07_metric)) )
-           
+
     for i, classname in enumerate(gt.keys()):
         if classname in pred:
             rec[classname], prec[classname], ap[classname] = ret_values[i]
@@ -441,8 +450,8 @@ def evalDetectionMultiprocessing(pred_all, gt_all, ovthresh=0.25, use_07_metric=
             rec[classname] = 0
             prec[classname] = 0
             ap[classname] = 0
-    
-    return rec, prec, ap 
+
+    return rec, prec, ap
 
 ######################
 # Parameters
@@ -455,7 +464,7 @@ class CArgs(object):
 # And a global object of that class
 args = CArgs()
 
-# Where to look for KITTI-360 
+# Where to look for KITTI-360
 if 'KITTI360_DATASET' in os.environ:
     args.kitti360Path = os.environ['KITTI360_DATASET']
 else:
@@ -471,6 +480,7 @@ else:
 
 # Parameters that should be modified by user
 args.groundTruthListFile = os.path.join(args.kitti360Path, 'data_3d_semantics', 'train', '2013_05_28_drive_val.txt')
+args.groundTruthWindows  = 'train'
 
 # Remaining params
 args.JSONOutput         = True
@@ -564,45 +574,71 @@ def param2Bbox(params):
     bboxVertices = get3dBox(size, headingAngle, center)
     return bboxVertices, classname
 
+def getBboxMesh(vertices):
+    faces=np.array([[2,1,0], [0,3,2], [4,5,6], [6,7,4],
+                    [4,0,1], [1,5,4], [2,6,5], [5,1,2],
+                    [7,6,2], [2,3,7], [4,7,3], [3,0,4]])
+    mesh = open3d.geometry.TriangleMesh()
+    mesh.vertices = open3d.utility.Vector3dVector(vertices)
+    mesh.triangles = open3d.utility.Vector3iVector(faces)
+    mesh.compute_vertex_normals()
+    return mesh
+
 # Load pairs of prediction and ground truth bounding boxes.
 def loadPair(predictionImgFileName, groundTruthImgFileName, args):
-    bboxCenter = np.load(groundTruthImgFileName.replace('.npy', '_center.npy'))
     try:
         bboxParams = np.load(groundTruthImgFileName)
         groundTruthBboxes = []
+        groundTruthMeshes = []
         for bboxParam in bboxParams:
             bboxVertices, classname = param2Bbox(bboxParam)
-            bboxVertices += bboxCenter
             if classname not in args.evaluateClasses:
                 continue
             groundTruthBboxes.append((classname, bboxVertices))
+            #groundTruthMeshes.append(getBboxMesh(bboxVertices))
     except:
-        printError("Unable to load " + groundTruthImgFileName)
+        printError("Unable to load GT " + groundTruthImgFileName)
     try:
         bboxParams = np.load(predictionImgFileName)
         predictionBboxes = []
+        predictionMeshes = []
         for bboxParam in bboxParams:
             bboxVertices, classname = param2Bbox(bboxParam)
             confidence = bboxParam[-1]
             if classname not in args.evaluateClasses:
                 continue
             predictionBboxes.append((classname, bboxVertices, confidence))
+            #predictionMeshes.append(getBboxMesh(bboxVertices))
     except:
-        printError("Unable to load " + predictionImgFileName)
-    
+        printError("Unable to load Pd " + predictionImgFileName)
+
+    if DEBUG:
+        try:
+            rootPath = os.environ['KITTI360_DATASET']
+            data = read_ply(os.path.join(rootPath, 'data_3d_semantics', 'test', '2013_05_28_drive_0008_sync', 'static', '0000000002_0000000245.ply'))
+            print(data.shape)
+            points = np.vstack((data['x'], data['y'], data['z'])).T
+            pcd = open3d.geometry.PointCloud()
+            pcd.points = open3d.utility.Vector3dVector(points[::10])
+        except:
+            pcd = open3d.geometry.PointCloud()
+        open3d.visualization.draw_geometries(predictionMeshes+[pcd])
+
     return groundTruthBboxes, predictionBboxes
 
 
 # Evaluate image lists pairwise.
-def evaluateImgLists(predictionImgList, groundTruthImgList, args, vis_every=5):
+def evaluateImgLists(predictionImgList, groundTruthImgList, args, vis_every=5, use_logging= False, logger= None):
     if len(predictionImgList) != len(groundTruthImgList):
         printError("List of images for prediction and groundtruth are not of equal size.")
 
     ap_calculator_list = [APCalculator(iou_thresh) \
         for iou_thresh in args.apIouThresholds]
 
-    if not args.quiet:
-        print("Evaluating {} pairs of images...".format(len(predictionImgList)))
+    out_string  = "Pred_folder = {}\n".format(os.path.dirname(predictionImgList[0]))
+    out_string += "GT_folder   = {}\n".format(os.path.dirname(groundTruthImgList[0]))
+    out_string += "Evaluating {} pairs of images...\n".format(len(predictionImgList))
+    print(out_string)
 
     # Evaluate all pairs of images and save them into a matrix
     for i in range(len(predictionImgList)):
@@ -623,11 +659,30 @@ def evaluateImgLists(predictionImgList, groundTruthImgList, args, vis_every=5):
     # Evaluate average precision
     allMetrics = {}
     for i, ap_calculator in enumerate(ap_calculator_list):
-        print('-'*10, 'iou_thresh: %f'%(args.apIouThresholds[i]), '-'*10)
+        out_string      = 'iou_thresh: {:.2f} '.format(args.apIouThresholds[i])
         metrics_dict = ap_calculator.compute_metrics()
         allMetrics[args.apIouThresholds[i]] = metrics_dict
+
+        if i == 0:
+            out_string_head = '-'*16
+            for key in metrics_dict:
+                if "Average Precision" in key:
+                    key_print = key.replace("Average Precision", "AP")
+                elif "Recall" in key:
+                    key_print = key.replace("Recall", "R")
+                else:
+                    key_print = key
+                if "Building" in key_print:
+                    key_print = key_print.replace("Building", "Bld")
+                if "building" in key_print:
+                    key_print = key_print.replace("building", "bld")
+                key_print = key_print.replace(" ", "_")
+                out_string_head += '{} '.format(key_print.center(5))
+            print(out_string_head)
+
         for key in metrics_dict:
-            print('eval %s: %f'%(key, metrics_dict[key]))
+            out_string += '{:5.2f} '.format(metrics_dict[key]*100)
+        print(out_string)
 
     writeJSONFile( allMetrics, args)
     return True
@@ -647,8 +702,8 @@ def main():
 
     # the image lists can either be provided as arguments
     if (len(argv) >= 1):
-        args.predictionPath = os.path.join(os.path.abspath("results"), argv[0], "data")
-        args.exportFile = os.path.join(os.path.abspath("results"), argv[0], "resultBoundingBoxDetection.json")
+        args.predictionPath = argv[0]#os.path.join(os.path.abspath("results"), argv[0])
+        args.exportFile = os.path.join(argv[0], "resultBoundingBoxDetection.json")
 
     
     # use the ground truth search string specified above
@@ -668,4 +723,3 @@ def main():
 # call the main method
 if __name__ == "__main__":
     main()
-
