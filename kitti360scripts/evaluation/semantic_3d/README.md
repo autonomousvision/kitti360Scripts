@@ -122,9 +122,27 @@ Each npy file should contain a set of bounding boxes with each line denoting a b
 ```
 center_x, center_y, center_z, size_x, size_y, size_z, heading_angle, id, confidence
 ```
+- The `center_x, center_y, center_z` are in the __global / world / map coordinates__. 
+- The `size_x, size_y, size_z` are in __object coordinates__ and refer to length, width and height of the object respectively. (The object coordinate is X right, Z up and Y inside). 
+- The `heading_angle` (yaw) is positive ANTI-clockwise from positive X-axis about the Z-axis in __object coordinates__.
+- The `id` is the semantic label and should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. 
+
 Please check the `param2Bbox` function for more details.
 
-The semantic labels should follow the definition of [labels.py](https://github.com/autonomousvision/kitti360Scripts/blob/master/kitti360scripts/helpers/labels.py). Note that `id` should be used instead of `kittiId` or `trainId`. Further note that we only evaluate two classes, __building__ and __car__ for 3D bounding box detection.
+To run evaluation, first prepare the window data in `npy` (numpy) format. Type the following to get the windows:
+```bash
+cd kitti360Scripts/kitti360scripts/evaluation/semantic_3d
+export KITTI360_DATASET=my_dataset_path
+python prepare_train_val_windows.py
+```
+This creates the `300` train and val windows inside the `kitti360Scripts/kitti360scripts/evaluation/semantic_3d` folder. 
+
+We only evaluate two classes, __building__ and __car__ for 3D bounding box detection. Type the following to run the evaluation:
+```bash
+cd kitti360Scripts/kitti360scripts/evaluation/semantic_3d
+export KITTI360_DATASET=my_dataset_path
+python evalDetection.py my_prediction_folder
+```
 
 # 3D Semantic Scene Completion 
 
