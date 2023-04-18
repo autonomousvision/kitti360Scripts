@@ -14,14 +14,26 @@ import os
 import copy
 # numpy
 import numpy as np
-# open3d
-import open3d
 # matplotlib for colormaps
 import matplotlib.cm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 # struct for reading binary ply files
 import struct
+from kitti360scripts.helpers.csHelpers import Rodrigues
+from kitti360scripts.devkits.commons.loadCalibration import loadCalibrationCameraToPose, loadCalibrationRigid
+
+CSUPPORT = True
+# Check if C-Support is available for better performance
+if CSUPPORT:
+    try:
+        from kitti360scripts.helpers import curlVelodyneData
+    except:
+        CSUPPORT = False
+        print('CSUPPORT is required for unwrapping the velodyne data!')
+        print('Run ``CYTHONIZE_EVAL= python setup.py build_ext --inplace`` to build with cython')
+        sys.exit(-1)
+
 
 # the main class that loads raw 3D scans
 class Kitti360Viewer3DRaw(object):
@@ -45,6 +57,44 @@ class Kitti360Viewer3DRaw(object):
         sequence = '2013_05_28_drive_%04d_sync' % seq
         self.raw3DPcdPath  = os.path.join(kitti360Path, 'data_3d_raw', sequence, self.sensor_dir, 'data')
 
+        self.kitti360Path = kitti360Path
+        self.sequence = sequence
+        self.loadPoses()
+        self.loadExtrinsics()
+
+    # poses are required to unwrap velodyne points to compensate for ego-motion
+    def loadPoses(self):
+        # load poses
+        filePoses = os.path.join(self.kitti360Path, 'data_poses', self.sequence, 'poses.txt')
+        poses = np.loadtxt(filePoses)
+        frames = poses[:,0]
+        poses = np.reshape(poses[:,1:],[-1,3,4])
+        self.Tr_pose_world = {}
+        self.frames = frames
+        for frame, pose in zip(frames, poses): 
+            pose = np.concatenate((pose, np.array([0.,0.,0.,1.]).reshape(1,4)))
+            self.Tr_pose_world[frame] = pose
+
+    def loadExtrinsics(self):
+        # cam_0 to velo
+        fileCameraToVelo = os.path.join(self.kitti360Path, 'calibration', 'calib_cam_to_velo.txt')
+        TrCam0ToVelo = loadCalibrationRigid(fileCameraToVelo)
+
+        # all cameras to system center 
+        fileCameraToPose = os.path.join(self.kitti360Path, 'calibration', 'calib_cam_to_pose.txt')
+        TrCamToPose = loadCalibrationCameraToPose(fileCameraToPose)
+  
+        self.TrVeloToPose = TrCamToPose['image_00'] @ np.linalg.inv(TrCam0ToVelo)
+
+        # velodyne to all cameras
+        self.TrVeloToCam = {}
+        for k, v in TrCamToPose.items():
+            # Tr(cam_k -> velo) = Tr(cam_k -> cam_0) @ Tr(cam_0 -> velo)
+            TrCamkToCam0 = np.linalg.inv(TrCamToPose['image_00']) @ TrCamToPose[k]
+            TrCamToVelo = TrCam0ToVelo @ TrCamkToCam0
+            # Tr(velo -> cam_k)
+            self.TrVeloToCam[k] = np.linalg.inv(TrCamToVelo)
+
     def loadVelodyneData(self, frame=0):
         pcdFile = os.path.join(self.raw3DPcdPath, '%010d.bin' % frame)
         if not os.path.isfile(pcdFile):
@@ -62,9 +112,34 @@ class Kitti360Viewer3DRaw(object):
         pcd = np.concatenate([np.zeros_like(pcd[:,0:1]), -pcd[:,0:1], pcd[:,1:2]], axis=1)
         return pcd 
 
+    def curlParameterFromPoses(self, frame):
+        Tr_pose_pose = np.eye(4)
+
+        if frame in self.Tr_pose_world.keys():
+            if frame==1:
+                if frame+1 in self.Tr_pose_world.keys():
+                    Tr_pose_pose = np.linalg.inv(self.Tr_pose_world[frame+1]) @ self.Tr_pose_world[frame]
+            else:
+                if frame-1 in self.Tr_pose_world.keys():
+                    Tr_pose_pose = np.linalg.inv(self.Tr_pose_world[frame]) @ self.Tr_pose_world[frame-1]
+        Tr_delta = np.linalg.inv(self.TrVeloToPose) @ Tr_pose_pose @ self.TrVeloToPose
+        
+        r = Rodrigues(Tr_delta[0:3,0:3])
+        t = Tr_delta[0:3,3]
+        return r.flatten(),t
+
+
+    def curlVelodyneData(self, frame, pcd):
+        pcd=pcd.astype(np.float64)
+        pcd_curled = np.copy(pcd) 
+        # get curl parameters 
+        r,t = self.curlParameterFromPoses(frame)
+        # unwrap points to compensate for ego motion
+        pcd_curled = curlVelodyneData.cCurlVelodyneData(pcd, pcd_curled, r, t)
+        return pcd_curled.astype(np.float32)
+        
 
 def projectVeloToImage(cam_id=0, seq=0):
-    from kitti360scripts.devkits.commons.loadCalibration import loadCalibrationCameraToPose, loadCalibrationRigid
     from kitti360scripts.helpers.project import CameraPerspective, CameraFisheye
     from PIL import Image
     import matplotlib.pyplot as plt
@@ -89,28 +164,11 @@ def projectVeloToImage(cam_id=0, seq=0):
     # object for parsing 3d raw data 
     velo = Kitti360Viewer3DRaw(mode='velodyne', seq=seq)
     
-    # cam_0 to velo
-    fileCameraToVelo = os.path.join(kitti360Path, 'calibration', 'calib_cam_to_velo.txt')
-    TrCam0ToVelo = loadCalibrationRigid(fileCameraToVelo)
-
-    # all cameras to system center 
-    fileCameraToPose = os.path.join(kitti360Path, 'calibration', 'calib_cam_to_pose.txt')
-    TrCamToPose = loadCalibrationCameraToPose(fileCameraToPose)
-
-    # velodyne to all cameras
-    TrVeloToCam = {}
-    for k, v in TrCamToPose.items():
-        # Tr(cam_k -> velo) = Tr(cam_k -> cam_0) @ Tr(cam_0 -> velo)
-        TrCamkToCam0 = np.linalg.inv(TrCamToPose['image_00']) @ TrCamToPose[k]
-        TrCamToVelo = TrCam0ToVelo @ TrCamkToCam0
-        # Tr(velo -> cam_k)
-        TrVeloToCam[k] = np.linalg.inv(TrCamToVelo)
-    
     # take the rectification into account for perspective cameras
     if cam_id==0 or cam_id == 1:
-        TrVeloToRect = np.matmul(camera.R_rect, TrVeloToCam['image_%02d' % cam_id])
+        TrVeloToRect = np.matmul(camera.R_rect, velo.TrVeloToCam['image_%02d' % cam_id])
     else:
-        TrVeloToRect = TrVeloToCam['image_%02d' % cam_id]
+        TrVeloToRect = velo.TrVeloToCam['image_%02d' % cam_id]
 
     # color map for visualizing depth map
     cm = plt.get_cmap('jet')
@@ -119,9 +177,11 @@ def projectVeloToImage(cam_id=0, seq=0):
     # for each frame, load the raw 3D scan and project to image plane
     for frame in range(0, 1000, 50):
         points = velo.loadVelodyneData(frame)
+        # curl velodyne
+        points = velo.curlVelodyneData(frame, points)
+
         points[:,3] = 1
 
-        # transfrom velodyne points to camera coordinate
         pointsCam = np.matmul(TrVeloToRect, points.T).T
         pointsCam = pointsCam[:,:3]
         # project to image space
@@ -149,7 +209,7 @@ def projectVeloToImage(cam_id=0, seq=0):
         depthImage = cm(depthMap/depthMap.max())[...,:3]
         colorImage[depthMap>0] = depthImage[depthMap>0]
 
-        axs[0].imshow(depthMap, cmap='jet')
+        axs[0].imshow(depthMap, cmap='jet', interpolation='none')
         axs[0].title.set_text('Projected Depth')
         axs[0].axis('off')
         axs[1].imshow(colorImage)
@@ -162,10 +222,10 @@ if __name__=='__main__':
 
     visualizeIn2D = True
     # sequence index
-    seq = 0
+    seq = 2
     # set it to 0 or 1 for projection to perspective images
     #           2 or 3 for projecting to fisheye images
-    cam_id = 2 
+    cam_id = 3
     
     # visualize raw 3D velodyne scans in 2D
     if visualizeIn2D:
@@ -173,6 +233,11 @@ if __name__=='__main__':
 
     # visualize raw 3D scans in 3D
     else:
+        # open3d
+        try:
+            import open3d
+        except:
+            raise ValueError("Open3d required to visualize raw 3D scans in 3D!")
         mode = 'sick'
         frame = 1000
 

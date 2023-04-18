@@ -158,6 +158,41 @@ def writeDict2JSON(dictName, fileName):
     with open(fileName, 'w') as f:
         f.write(json.dumps(dictName, default=lambda o: o.__dict__, sort_keys=True, indent=4))
 
+# Convert rotation matrix to axis angle
+def Rodrigues(matrix):
+    """Convert the rotation matrix into the axis-angle notation.
+    Conversion equations
+    ====================
+    From Wikipedia (http://en.wikipedia.org/wiki/Rotation_matrix), the conversion is given by::
+        x = Qzy-Qyz
+        y = Qxz-Qzx
+        z = Qyx-Qxy
+        r = hypot(x,hypot(y,z))
+        t = Qxx+Qyy+Qzz
+        theta = atan2(r,t-1)
+    @param matrix:  The 3x3 rotation matrix to update.
+    @type matrix:   3x3 numpy array
+    @return:    The 3D rotation axis and angle.
+    @rtype:     numpy 3D rank-1 array, float
+    """
+
+    # Axes.
+    axis = np.zeros(3, np.float64)
+    axis[0] = matrix[2,1] - matrix[1,2]
+    axis[1] = matrix[0,2] - matrix[2,0]
+    axis[2] = matrix[1,0] - matrix[0,1]
+
+    # Angle.
+    r = np.hypot(axis[0], np.hypot(axis[1], axis[2]))
+    t = matrix[0,0] + matrix[1,1] + matrix[2,2]
+    theta = np.arctan2(r, t-1)
+
+    # Normalise the axis.
+    axis = axis / r
+
+    # Return the data.
+    return axis * theta
+
 # dummy main
 if __name__ == "__main__":
     printError("Only for include, not executable on its own.")

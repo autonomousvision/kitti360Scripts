@@ -20,8 +20,9 @@ if 'CYTHONIZE_EVAL' in os.environ:
     os.environ["CC"] = "g++"
     os.environ["CXX"] = "g++"
 
-    pyxFile = os.path.join("kitti360scripts", "evaluation", "addToConfusionMatrix.pyx")
-    ext_modules = cythonize(pyxFile)
+    pyxFiles = [os.path.join("kitti360scripts", "evaluation", "addToConfusionMatrix.pyx"),
+                os.path.join("kitti360scripts", "helpers", "curlVelodyneData.pyx")]
+    ext_modules = cythonize(pyxFiles)
 
 with open("README.md") as f:
     readme = f.read()
