@@ -4,7 +4,7 @@ function pose = convertOxtsToPose(oxts)
 % x = forward, y = right, z = down (see OXTS RT3000 user manual)
 % afterwards, pose{i} contains the transformation which takes a
 % 3D point in the i'th frame and projects it into the oxts
-% coordinates of the first frame.
+% coordinates with the origin at a lake in Karlsruhe.
 
 single_value = ~iscell(oxts);
 if single_value
