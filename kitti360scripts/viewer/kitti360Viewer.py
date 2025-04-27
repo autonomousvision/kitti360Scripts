@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 #################
 ## Import modules
 #################
@@ -27,7 +26,7 @@ try:
     from PIL import Image
 except:
     pass
-
+ 
 # the label tool was originally written for python 2 and pyqt4
 # in order to enable compatibility with python 3, we need
 # to fix the pyqt api to the old version that is default in py2
@@ -674,6 +673,29 @@ class Kitti360Viewer(QtWidgets.QMainWindow):
         # Restore the saved setting from the stack
         qp.restore()
 
+    # Draw the heading direction of the 3D bounding boxes
+    def getHeading(self, obj):
+        if obj.name not in ['car', 'truck', 'bus', 'caravan', 'trailer', 'train', 'building', 'garage']:
+            return []
+        if obj.heading_depth[0]<0 and obj.heading_depth[1]<0: 
+            return []
+        elif obj.heading_depth[0]<0 or obj.heading_depth[1]<0:
+            if self.currentFile:
+                frame = int(os.path.splitext(os.path.basename( self.currentFile ))[0])
+                v = [obj.heading[0]*x + obj.heading[1]*(1-x) for x in np.arange(0,1,0.1)]
+                uv, d = self.camera.project_vertices(np.asarray(v), frame)
+                d[d<0] = 1e+6
+                vidx = 0 if obj.heading_depth[0] < 0 else 1
+                obj.heading_proj[0][vidx] = uv[0][np.argmin(d)]
+                obj.heading_proj[1][vidx] = uv[1][np.argmin(d)]
+            else:
+                return []
+
+        return QtCore.QLineF(obj.heading_proj[0][0],
+                              obj.heading_proj[1][0],
+                              obj.heading_proj[0][1],
+                              obj.heading_proj[1][1] )
+
     # Draw the projected 3D bounding boxes
     def getLines(self, obj):
         lines = []
@@ -714,6 +736,29 @@ class Kitti360Viewer(QtWidgets.QMainWindow):
                 self.annotation2D.loadInstance(self.getLabelFilename(), self.gtType)
             overlay = self.getQImage(self.annotation2D.semanticImg)
         return overlay
+
+
+    # Draw an arrow from p1 to p2 using QPainter
+    def drawArrow(self, qp2, p1, p2, arrow_size=10):
+
+        line = QtCore.QLineF(p1, p2)
+        angle = np.arctan2(-line.dy(), line.dx())
+    
+        angle1 = angle + np.radians(150)
+        angle2 = angle + np.radians(210)
+    
+        arrowP1 = QtCore.QPointF(
+            p2.x() + arrow_size * np.cos(angle1),
+            p2.y() - arrow_size * np.sin(angle1)
+        )
+        arrowP2 = QtCore.QPointF(
+            p2.x() + arrow_size * np.cos(angle2),
+            p2.y() - arrow_size * np.sin(angle2)
+        )
+    
+        qp2.drawLine(p1, p2)
+        qp2.drawLine(p2, arrowP1)
+        qp2.drawLine(p2, arrowP2)
         
 
     # Draw the labels in the given QPainter qp
@@ -744,6 +789,10 @@ class Kitti360Viewer(QtWidgets.QMainWindow):
             qp2.setBrush(brush)
             for line in lines:
                 qp2.drawLine(line)
+            
+            heading = self.getHeading(self.highlightObj)
+            if heading!=[]:
+                self.drawArrow(qp2, heading.p1(), heading.p2())
 
 
         if self.highlightObjSparse:
@@ -1053,7 +1102,7 @@ class Kitti360Viewer(QtWidgets.QMainWindow):
                 sequence = item
                 self.currentSequence = sequence
                 self.sequence = os.path.normpath(os.path.join(imagePath, sequence, "image_%02d" % self.cameraId, "data_rect"))
-                self.labelPath = os.path.normpath(os.path.join(label2DPath, sequence))
+                self.labelPath = os.path.normpath(os.path.join(label2DPath, sequence, "image_%02d" % self.cameraId))
                 self.annotation2DInstance = Annotation2DInstance(os.path.join(label2DPath, sequence))
                 self.annotation3D = Annotation3D(label3DBboxPath, sequence)
 

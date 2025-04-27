@@ -85,12 +85,17 @@ class Camera:
     def __call__(self, obj3d, frameId):
 
         vertices = obj3d.vertices
+        heading = obj3d.heading
 
         uv, depth = self.project_vertices(vertices, frameId)
 
         obj3d.vertices_proj = uv
         obj3d.vertices_depth = depth 
         obj3d.generateMeshes()
+
+        uv_heading, depth_heading = self.project_vertices(heading, frameId)
+        obj3d.heading_proj = uv_heading
+        obj3d.heading_depth = depth_heading
 
 
 class CameraPerspective(Camera):
